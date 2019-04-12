@@ -10,14 +10,14 @@ import com.bumptech.glide.load.resource.bitmap.BitmapTransformation
 import com.mitteloupe.photostyle.glide.extension.getEqualBitmap
 import java.security.MessageDigest
 
-private const val ID = "com.mitteloupe.photostyle.glide.transformation.GreyScaleTransformation"
-
 /**
  * Created by Eran Boudjnah on 11/04/2019.
  */
-class GreyScaleTransformation(
+class GrayscaleTransformation(
     private val saturation: Float = 0f
 ) : BitmapTransformation() {
+    private val id = "com.mitteloupe.photostyle.glide.transformation.GreyScaleTransformation:$saturation"
+
     private val saturationMatrix by lazy {
         ColorMatrix().apply {
             setSaturation(saturation)
@@ -44,11 +44,12 @@ class GreyScaleTransformation(
         return targetBitmap
     }
 
-    override fun equals(other: Any?) = other is GreyScaleTransformation
+    override fun equals(other: Any?) = other is GrayscaleTransformation &&
+            saturation == other.saturation
 
-    override fun hashCode() = ID.hashCode()
+    override fun hashCode() = id.hashCode()
 
     override fun updateDiskCacheKey(messageDigest: MessageDigest) {
-        messageDigest.update(ID.toByteArray(CHARSET))
+        messageDigest.update(id.toByteArray(CHARSET))
     }
 }
