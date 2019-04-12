@@ -11,7 +11,6 @@ import com.mitteloupe.photostyle.renderscript.ScriptC_posterize
 import java.security.MessageDigest
 import androidx.annotation.IntRange as AndroidIntRange
 
-
 private const val MINIMUM_POSTERIZE_VALUE = 2
 private const val MAXIMUM_POSTERIZE_VALUE = 255
 
@@ -70,15 +69,3 @@ class PosterizeTransformation(
         messageDigest.update(id.toByteArray(CHARSET))
     }
 }
-
-//void root(const uchar4 *in, uchar4 *out, uint32_t x, uint32_t y) {
-//    float3 pixel = convert_float4(in[0]).rgb;
-//    pixel = rsMatrixMultiply(&colorMat, pixel);
-//    pixel = clamp(pixel, 0.f, 255.f);
-//    pixel = (pixel - inBlack) * overInWMinInB;
-//    if (gamma != 1.0f)
-//        pixel = pow(pixel, (float3)gamma);
-//    pixel = pixel * outWMinOutB + outBlack;
-//    pixel = clamp(pixel, 0.f, 255.f);
-//    out->xyz = convert_uchar3(pixel);
-//}
