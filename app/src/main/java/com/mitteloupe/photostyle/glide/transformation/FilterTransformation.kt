@@ -13,13 +13,13 @@ import java.security.MessageDigest
 /**
  * Created by Eran Boudjnah on 11/04/2019.
  */
-class ColorizeTransformation(
-    private val colorPalette: ColorPalette
+class FilterTransformation(
+    private val filter: Filter
 ) : BitmapTransformation() {
-    private val id = "com.mitteloupe.photostyle.glide.transformation.ColorizeTransformation:$colorPalette"
+    private val id = "com.mitteloupe.photostyle.glide.transformation.FilterTransformation:$filter"
 
     private val colorMatrixColorFilter by lazy {
-        ColorMatrixColorFilter(colorPalette.colorMatrix)
+        ColorMatrixColorFilter(filter.colorMatrix)
     }
 
     private val colorFilterPaint by lazy {
@@ -40,7 +40,7 @@ class ColorizeTransformation(
         return targetBitmap
     }
 
-    override fun equals(other: Any?) = other is ColorizeTransformation
+    override fun equals(other: Any?) = other is FilterTransformation
 
     override fun hashCode() = id.hashCode()
 
@@ -48,7 +48,7 @@ class ColorizeTransformation(
         messageDigest.update(id.toByteArray(CHARSET))
 }
 
-enum class ColorPalette(val colorMatrix: ColorMatrix) {
+enum class Filter(val colorMatrix: ColorMatrix) {
     BROWNIE(
         ColorMatrix(
             floatArrayOf(
