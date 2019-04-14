@@ -1,62 +1,73 @@
 package com.mitteloupe.photostyle.clustering
 
-import android.util.SparseIntArray
-import java.util.Vector
-
 /**
  * Created by Eran Boudjnah on 14/04/2019.
  */
+
+private const val NO_CLUSTER_ID = -1
+
 class KMeans<T : Any>(
     private val arithmetic: Arithmetic<T>
 ) {
     private var executedSteps: Int = 0
-    private lateinit var data: Vector<T>
-    private lateinit var centers: Vector<T>
-    private lateinit var labels: Vector<Int>
-    private val itemsPerCenter = SparseIntArray()
+    private lateinit var items: Array<T>
+    private lateinit var centers: Array<T>
+    private lateinit var itemToCenterPointers: IntArray
+    private lateinit var itemCenterDistances: DoubleArray
+    private lateinit var itemsPerCenter: IntArray
 
     fun execute(
-        data: Vector<T>,
+        data: Array<T>,
         centersCount: Int,
-        labels: Vector<Int>,
+        labels: IntArray,
         terminationCriteria: TerminationCriteria,
-        centers: Vector<T>
+        centers: Array<T>
     ) {
         // TODO: flags: // KMEANS_RANDOM_CENTERS / KMEANS_PP_CENTERS / KMEANS_USE_INITIAL_LABELS
 
         initClustering(data, centers, labels)
         initCenters(centersCount, centers, data)
-        initLabels(labels)
+        initItemMetadataLists(labels)
         var changed = clusteringStep()
         calculateCenters(data, centers, labels)
 
-        while (changed) {
-            // Break if criteria met
+        mainLoop@ while (changed && !isCriteriaMet(terminationCriteria)) {
             changed = clusteringStep()
         }
     }
 
-    private fun initClustering(data: Vector<T>, centers: Vector<T>, labels: Vector<Int>) {
-        this.data = data
-        this.centers = centers
-        this.labels = labels
-        executedSteps = 0
-        itemsPerCenter.clear()
+    private fun isCriteriaMet(terminationCriteria: TerminationCriteria): Boolean {
+        when (terminationCriteria) {
+            is TerminationCriteria.Iterations -> if (terminationCriteria.iterations <= executedSteps) return true
+        }
+        return false
     }
 
-    private fun initCenters(centersCount: Int, centers: Vector<T>, data: Vector<T>) {
+    private fun initClustering(data: Array<T>, centers: Array<T>, labels: IntArray) {
+        this.items = data
+        this.centers = centers
+        this.itemToCenterPointers = labels
+        executedSteps = 0
+        // TODO: Empty all arrays
+    }
+
+    private fun initCenters(centersCount: Int, centers: Array<T>, data: Array<T>) {
         val sample = data.toList().shuffled().subList(0, centersCount)
 
         repeat(centersCount) { index ->
-            centers.add(arithmetic.copyOf(sample[index]))
+            centers[index] = arithmetic.copyOf(sample[index])
         }
     }
 
-    private fun initLabels(labels: Vector<Int>) {
-        repeat(labels.capacity()) {
-            labels.add(0)
+    private fun initItemMetadataLists(labels: IntArray) {
+        val center = centers[0]
+        itemCenterDistances = DoubleArray(items.size) { index ->
+            val item = items[index]
+            arithmetic.getRelativeDistance(item, center)
         }
-        itemsPerCenter.put(0, labels.size)
+        itemsPerCenter = IntArray(items.size) { index ->
+            if (index == 0) labels.size else 0
+        }
     }
 
     private fun clusteringStep(): Boolean {
@@ -69,9 +80,8 @@ class KMeans<T : Any>(
     private fun reCluster(): Boolean {
         var movedCount = 0
 
-        val NO_CLUSTER_ID = -1
-        data.forEachIndexed reassignItem@{ index, item ->
-            val currentClusterId = labels[index]
+        items.forEachIndexed reassignItem@{ index, item ->
+            val currentClusterId = itemToCenterPointers[index]
 
             // If the cluster only has one item left - don't re-assign its item.
             // Otherwise, we may lose that cluster.
@@ -81,7 +91,7 @@ class KMeans<T : Any>(
 
             val center = centers[currentClusterId]
 
-            var minDistance = arithmetic.getRelativeDistance(item, center)
+            var minDistance = itemCenterDistances[index]
 
             var targetClusterId = NO_CLUSTER_ID
             centers.forEachIndexed findClosestCenter@{ visitedClusterId, visitedCluster ->
@@ -95,11 +105,12 @@ class KMeans<T : Any>(
             }
 
             if (targetClusterId != NO_CLUSTER_ID) {
-                val lastClusterCount = itemsPerCenter[currentClusterId]
-                itemsPerCenter.put(currentClusterId, lastClusterCount - 1)
-                labels[index] = targetClusterId
-                val newClusterCount = itemsPerCenter[targetClusterId] + 1
-                itemsPerCenter.put(targetClusterId, newClusterCount)
+                itemsPerCenter[currentClusterId]--
+                itemToCenterPointers[index] = targetClusterId
+                itemsPerCenter[targetClusterId]++
+
+                itemCenterDistances[index] = minDistance
+
                 ++movedCount
             }
         }
@@ -107,13 +118,13 @@ class KMeans<T : Any>(
         val moved = movedCount != 0
 
         if (moved) {
-            calculateCenters(data, centers, labels)
+            calculateCenters(items, centers, itemToCenterPointers)
         }
 
         return moved
     }
 
-    private fun calculateCenters(data: Vector<T>, centers: Vector<T>, labels: Vector<Int>) {
+    private fun calculateCenters(data: Array<T>, centers: Array<T>, labels: IntArray) {
         resetAllItems(centers)
 
         labels.forEachIndexed { dataIndex, centerIndex ->
@@ -127,7 +138,7 @@ class KMeans<T : Any>(
         }
     }
 
-    private fun resetAllItems(centers: Vector<T>) {
+    private fun resetAllItems(centers: Array<T>) {
         centers.forEach { currentCenter ->
             arithmetic.reset(currentCenter)
         }

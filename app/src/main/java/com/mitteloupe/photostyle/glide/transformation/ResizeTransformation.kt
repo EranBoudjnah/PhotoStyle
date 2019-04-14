@@ -14,7 +14,8 @@ import java.security.MessageDigest
  */
 class ResizeTransformation(
     private val horizontalPixels: Int = KEEP_ASPECT_RATIO,
-    private val verticalPixels: Int = KEEP_ASPECT_RATIO
+    private val verticalPixels: Int = KEEP_ASPECT_RATIO,
+    private val smoothScale: Boolean = true
 ) : BitmapTransformation() {
     private val id =
         "com.mitteloupe.photostyle.glide.transformation.ResizeTransformation:$horizontalPixels:$verticalPixels"
@@ -43,12 +44,13 @@ class ResizeTransformation(
             (horizontalPixels * toTransform.height) / toTransform.width
         }
         val outputBitmap = pool.getBitmapWithSize(scaleDownWidth, scaleDownHeight, toTransform.config)
-        drawScaledBitmap(toTransform, outputBitmap, smoothPaint)
+        val paint = if (smoothScale) smoothPaint else null
+        drawScaledBitmap(toTransform, outputBitmap, paint)
 
         return outputBitmap
     }
 
-    private fun drawScaledBitmap(sourceBitmap: Bitmap, targetBitmap: Bitmap, paint: Paint) {
+    private fun drawScaledBitmap(sourceBitmap: Bitmap, targetBitmap: Bitmap, paint: Paint?) {
         val canvas = Canvas(targetBitmap)
         canvas.matrix = scaleMatrix.apply {
             setScale(
