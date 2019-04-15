@@ -17,19 +17,19 @@ class RgbLabConverter {
 
     fun convertRgbMatrixToLab(
         sourceRgbMatrix: Matrix<Vector3<Int>>
-    ) = Matrix<Vector3<Double>>(
+    ) = Matrix(
         sourceRgbMatrix.width,
         sourceRgbMatrix.height
-    ).initialize { x, y ->
+    ) { x, y ->
         convertRgbVector3ToLab(sourceRgbMatrix[x, y])
     }
 
     fun convertLabMatrixToRgb(
         sourceLabMatrix: Matrix<Vector3<Double>>
-    ) = Matrix<Vector3<Int>>(
+    ) = Matrix(
         sourceLabMatrix.width,
         sourceLabMatrix.height
-    ).initialize { x, y ->
+    ) { x, y ->
         convertLabVector3ToRgb(sourceLabMatrix[x, y])
     }
 

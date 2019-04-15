@@ -1,4 +1,4 @@
-package com.mitteloupe.photostyle.graphics
+package com.mitteloupe.photostyle.graphics.dithering
 
 import com.mitteloupe.photostyle.math.Matrix
 import com.mitteloupe.photostyle.math.Vector3

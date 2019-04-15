@@ -1,4 +1,4 @@
-package com.mitteloupe.photostyle.graphics
+package com.mitteloupe.photostyle.graphics.dithering
 
 import com.mitteloupe.photostyle.math.Matrix
 import com.mitteloupe.photostyle.math.Vector3
@@ -20,13 +20,13 @@ private val bayerMatrix = arrayOf(
  */
 class BayerConverter : RgbToPaletteConverter {
     override fun applyPalette(imgOrig: Matrix<Vector3<Int>>, palette: Array<Vector3<Int>>): Matrix<Vector3<Int>> {
-        val img = Matrix<Vector3<Int>>(imgOrig.width, imgOrig.height)
-            .initialize { x, y ->
+        val img = Matrix(imgOrig.width, imgOrig.height)
+            { x, y ->
                 val pixelOriginal = imgOrig[x, y]
                 Vector3(pixelOriginal.x, pixelOriginal.y, pixelOriginal.z)
             }
-        val resImg = Matrix<Vector3<Int>>(imgOrig.width, imgOrig.height)
-            .initialize { _, _ -> Vector3(0, 0, 0) }
+        val resImg = Matrix(imgOrig.width, imgOrig.height)
+            { _, _ -> Vector3(0, 0, 0) }
 
         val scale = 256.0 / palette.size.toDouble()
 
@@ -50,7 +50,7 @@ class BayerConverter : RgbToPaletteConverter {
         var minColor = palette[0]
         var minDistance = colorCCIR601Distance(color, palette[0])
 
-        palette.forEachIndexed { index, currentColor ->
+        palette.forEachIndexed { _, currentColor ->
             val distance = colorCCIR601Distance(color, currentColor)
             if (distance < minDistance) {
                 minDistance = distance

@@ -24,20 +24,15 @@ class BitmapVector3Converter() {
             throw IllegalArgumentException("Bitmap does not match initialized size: was ${bitmap.width}x${bitmap.height}, expected ${width}x$height")
         }
 
-        val result = Matrix<Vector3<Int>>(width, height)
         bitmap.getPixels(pixels, 0, width, 0, 0, width, height)
-        result.apply {
-            initialize { x, y ->
-                val color = pixels[x + y * width]
-                Vector3(
-                    Color.red(color),
-                    Color.green(color),
-                    Color.blue(color)
-                )
-            }
+        return Matrix(width, height) { x, y ->
+            val color = pixels[x + y * width]
+            Vector3(
+                Color.red(color),
+                Color.green(color),
+                Color.blue(color)
+            )
         }
-
-        return result
     }
 
     fun vector3MatrixToBitmap(matrix: Matrix<Vector3<Int>>, targetBitmap: Bitmap) {

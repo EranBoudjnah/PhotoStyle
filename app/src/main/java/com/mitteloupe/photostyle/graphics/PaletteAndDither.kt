@@ -1,13 +1,11 @@
-package com.mitteloupe.photostyle
+package com.mitteloupe.photostyle.graphics
 
 import android.graphics.Bitmap
 import android.util.Log
 import androidx.annotation.IntRange
 import com.mitteloupe.photostyle.clustering.KMeans
 import com.mitteloupe.photostyle.clustering.KMeans.TerminationCriteria
-import com.mitteloupe.photostyle.graphics.BitmapVector3Converter
-import com.mitteloupe.photostyle.graphics.RgbLabConverter
-import com.mitteloupe.photostyle.graphics.RgbToPaletteConverter
+import com.mitteloupe.photostyle.graphics.dithering.RgbToPaletteConverter
 import com.mitteloupe.photostyle.math.Matrix
 import com.mitteloupe.photostyle.math.Vector3
 import kotlin.system.measureNanoTime

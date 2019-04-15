@@ -18,8 +18,9 @@ class InvertTransformation(
 ) : BitmapTransformation() {
     private val id = "com.mitteloupe.photostyle.glide.transformation.InvertTransformation"
 
+    private val renderScript by lazy { RenderScript.create(context) }
+
     override fun transform(pool: BitmapPool, toTransform: Bitmap, outWidth: Int, outHeight: Int): Bitmap {
-        val renderScript = RenderScript.create(context)
         val inPixelsAllocation = Allocation.createFromBitmap(
             renderScript,
             toTransform,

@@ -1,4 +1,4 @@
-package com.mitteloupe.photostyle.graphics
+package com.mitteloupe.photostyle.graphics.dithering
 
 import com.mitteloupe.photostyle.math.Matrix
 import com.mitteloupe.photostyle.math.Vector3
@@ -8,13 +8,13 @@ import com.mitteloupe.photostyle.math.Vector3
  */
 class FloydSteinbergConverter : RgbToPaletteConverter {
     override fun applyPalette(imgOrig: Matrix<Vector3<Int>>, palette: Array<Vector3<Int>>): Matrix<Vector3<Int>> {
-        val img = Matrix<Vector3<Int>>(imgOrig.width, imgOrig.height)
-            .initialize { x, y ->
+        val img = Matrix(imgOrig.width, imgOrig.height)
+            { x, y ->
                 val pixelOriginal = imgOrig[x, y]
                 Vector3(pixelOriginal[0], pixelOriginal[1], pixelOriginal[2])
             }
-        val resImg = Matrix<Vector3<Int>>(imgOrig.width, imgOrig.height)
-            .initialize { _, _ -> Vector3(0, 0, 0) }
+        val resImg = Matrix(imgOrig.width, imgOrig.height)
+            { _, _ -> Vector3(0, 0, 0) }
 
         img.forEachIndexed { value, x, y ->
             val newPixel = findClosestPaletteColor(value, palette)

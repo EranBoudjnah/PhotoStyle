@@ -2,17 +2,18 @@ package com.mitteloupe.photostyle.math
 
 class Matrix<T : Any>(
     val width: Int,
-    val height: Int
+    val height: Int,
+    initialValue: (Int, Int) -> T
 ) {
-    private lateinit var array: Array<Array<T>>
+    private val array: Array<Array<T>>
 
-    fun initialize(initialValue: (Int, Int) -> T): Matrix<T> {
+    init {
+        @Suppress("UNCHECKED_CAST")
         array = Array(width) { x ->
             Array(height) { y ->
                 initialValue(x, y) as Any
             }
         } as Array<Array<T>>
-        return this
     }
 
     @Suppress("UNCHECKED_CAST")

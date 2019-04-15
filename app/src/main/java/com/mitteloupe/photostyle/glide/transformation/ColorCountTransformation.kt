@@ -4,12 +4,12 @@ import android.graphics.Bitmap
 import android.util.Log
 import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool
 import com.bumptech.glide.load.resource.bitmap.BitmapTransformation
-import com.mitteloupe.photostyle.PaletteAndDither
 import com.mitteloupe.photostyle.clustering.KMeans
 import com.mitteloupe.photostyle.glide.extension.getEqualBitmap
-import com.mitteloupe.photostyle.graphics.BayerConverter
 import com.mitteloupe.photostyle.graphics.BitmapVector3Converter
+import com.mitteloupe.photostyle.graphics.PaletteAndDither
 import com.mitteloupe.photostyle.graphics.RgbLabConverter
+import com.mitteloupe.photostyle.graphics.dithering.BayerConverter
 import com.mitteloupe.photostyle.math.Vector3Arithmetic
 import java.security.MessageDigest
 import kotlin.system.measureNanoTime
