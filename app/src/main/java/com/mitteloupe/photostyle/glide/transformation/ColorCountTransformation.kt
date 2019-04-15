@@ -7,8 +7,10 @@ import com.bumptech.glide.load.resource.bitmap.BitmapTransformation
 import com.mitteloupe.photostyle.PaletteAndDither
 import com.mitteloupe.photostyle.clustering.KMeans
 import com.mitteloupe.photostyle.glide.extension.getEqualBitmap
-import com.mitteloupe.photostyle.math.RgbLabConverter
-import com.mitteloupe.photostyle.math.Vector3
+import com.mitteloupe.photostyle.graphics.BitmapVector3Converter
+import com.mitteloupe.photostyle.graphics.FloydSteinbergConverter
+import com.mitteloupe.photostyle.graphics.RgbLabConverter
+import com.mitteloupe.photostyle.math.Vector3Arithmetic
 import java.security.MessageDigest
 import kotlin.system.measureNanoTime
 
@@ -20,37 +22,7 @@ class ColorCountTransformation(
 ) : BitmapTransformation() {
     private val id = "com.mitteloupe.photostyle.glide.transformation.ColorCountTransformation:$colorCount"
 
-    private val arithmetic by lazy {
-        object : KMeans.Arithmetic<Vector3<Double>> {
-            override fun add(value: Vector3<Double>, addTo: Vector3<Double>) {
-                addTo[0] += value[0]
-                addTo[1] += value[1]
-                addTo[2] += value[2]
-            }
-
-            override fun divide(value: Vector3<Double>, divider: Int) {
-                val dividerDouble = divider.toDouble()
-                value[0] /= dividerDouble
-                value[1] /= dividerDouble
-                value[2] /= dividerDouble
-            }
-
-            override fun reset(value: Vector3<Double>) {
-                value[0] = 0.0
-                value[1] = 0.0
-                value[2] = 0.0
-            }
-
-            override fun getRelativeDistance(from: Vector3<Double>, to: Vector3<Double>): Double {
-                val x = from[0] - to[0]
-                val y = from[1] - to[1]
-                val z = from[2] - to[2]
-                return x * x + y * y + z * z
-            }
-
-            override fun copyOf(value: Vector3<Double>) = Vector3(value[0], value[1], value[2])
-        }
-    }
+    private val arithmetic = Vector3Arithmetic()
 
     private val kMeans by lazy { KMeans(arithmetic) }
 
@@ -58,7 +30,13 @@ class ColorCountTransformation(
         val outputBitmap = pool.getEqualBitmap(toTransform)
 
         val benchmark = measureNanoTime {
-            PaletteAndDither(toTransform, kMeans, RgbLabConverter()).processImage(outputBitmap, colorCount)
+            PaletteAndDither(
+                toTransform,
+                kMeans,
+                RgbLabConverter(),
+                BitmapVector3Converter(),
+                FloydSteinbergConverter()
+            ).processImage(outputBitmap, colorCount)
         }
         Log.d("Benchmark", "Process image took ${benchmark / 1_000_000_000.0} seconds")
 

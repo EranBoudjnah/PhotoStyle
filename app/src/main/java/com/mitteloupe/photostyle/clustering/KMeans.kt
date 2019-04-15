@@ -89,8 +89,6 @@ class KMeans<T : Any>(
                 return@reassignItem
             }
 
-            val center = centers[currentClusterId]
-
             var minDistance = itemCenterDistances[index]
 
             var targetClusterId = NO_CLUSTER_ID

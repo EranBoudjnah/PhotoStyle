@@ -1,4 +1,8 @@
-package com.mitteloupe.photostyle.math
+package com.mitteloupe.photostyle.graphics
+
+import com.mitteloupe.photostyle.math.Matrix
+import com.mitteloupe.photostyle.math.Vector3
+import com.mitteloupe.photostyle.math.clamp
 
 /**
  * Created by Eran Boudjnah on 14/04/2019.
@@ -29,6 +33,11 @@ class RgbLabConverter {
         convertLabVector3ToRgb(sourceLabMatrix[x, y])
     }
 
+    fun convertLabArrayToRgb(paletteLab: Array<Vector3<Double>>) =
+        Array(paletteLab.size) { index ->
+            convertLabVector3ToRgb(paletteLab[index])
+        }
+
     private fun convertRgbVector3ToLab(rgb: Vector3<Int>): Vector3<Double> {
         val redScaled = colorScalePreCalculated[rgb[0]]
         val greenScaled = colorScalePreCalculated[rgb[1]]
@@ -38,9 +47,18 @@ class RgbLabConverter {
         var y = (redScaled * 0.2126 + greenScaled * 0.7152 + blueScaled * 0.0722)
         var z = (redScaled * 0.0193 + greenScaled * 0.1192 + blueScaled * 0.9505) / 1.08883
 
-        x = if (x > 0.008856) Math.pow(x, THIRD) else (7.787 * x) + OFFSET_VALUE
-        y = if (y > 0.008856) Math.pow(y, THIRD) else (7.787 * y) + OFFSET_VALUE
-        z = if (z > 0.008856) Math.pow(z, THIRD) else (7.787 * z) + OFFSET_VALUE
+        x = if (x > 0.008856) Math.pow(
+            x,
+            THIRD
+        ) else (7.787 * x) + OFFSET_VALUE
+        y = if (y > 0.008856) Math.pow(
+            y,
+            THIRD
+        ) else (7.787 * y) + OFFSET_VALUE
+        z = if (z > 0.008856) Math.pow(
+            z,
+            THIRD
+        ) else (7.787 * z) + OFFSET_VALUE
 
         return Vector3((116.0 * y) - 16.0, 500.0 * (x - y), 200.0 * (y - z))
     }
