@@ -23,7 +23,7 @@ class BayerConverter : RgbToPaletteConverter {
         val img = Matrix<Vector3<Int>>(imgOrig.width, imgOrig.height)
             .initialize { x, y ->
                 val pixelOriginal = imgOrig[x, y]
-                Vector3(pixelOriginal[0], pixelOriginal[1], pixelOriginal[2])
+                Vector3(pixelOriginal.x, pixelOriginal.y, pixelOriginal.z)
             }
         val resImg = Matrix<Vector3<Int>>(imgOrig.width, imgOrig.height)
             .initialize { _, _ -> Vector3(0, 0, 0) }
@@ -32,9 +32,10 @@ class BayerConverter : RgbToPaletteConverter {
 
         img.forEachIndexed { color, x, y ->
             val ditherMapValue = bayerMatrix[x % 8 + (y % 8) * 8] / 64.0 - 0.5
-            color.x = (color.x.toDouble() + ditherMapValue * scale).toInt().clamp(0, 255)
-            color.y = (color.y.toDouble() + ditherMapValue * scale).toInt().clamp(0, 255)
-            color.z = (color.z.toDouble() + ditherMapValue * scale).toInt().clamp(0, 255)
+            val scaledDitherValue = ditherMapValue * scale
+            color.x = (color.x.toDouble() + scaledDitherValue).toInt().clamp(0, 255)
+            color.y = (color.y.toDouble() + scaledDitherValue).toInt().clamp(0, 255)
+            color.z = (color.z.toDouble() + scaledDitherValue).toInt().clamp(0, 255)
             val colorIndex = findClosestPaletteColor(color, palette)
             resImg[x, y] = colorIndex
         }
@@ -61,13 +62,16 @@ class BayerConverter : RgbToPaletteConverter {
     }
 
     private fun colorCCIR601Distance(a: Vector3<Int>, b: Vector3<Int>): Double {
-        val luma1 = (a.x * 299 + a.y * 587 + a.z * 114) / (255.0 * 1000)
-        val luma2 = (b.x * 299 + b.y * 587 + b.z * 114) / (255.0 * 1000)
+        val luma1 = (a.x * 299 + a.y * 587 + a.z * 114) / (255.0 * 1000.0)
+        val luma2 = (b.x * 299 + b.y * 587 + b.z * 114) / (255.0 * 1000.0)
         val lumaDifference = luma1 - luma2
-        val diffR = (a.x - b.x) / 255.0
-        val diffG = (a.y - b.y) / 255.0
-        val diffB = (a.z - b.z) / 255.0
-        return (diffR * diffR * 0.299 + diffG * diffG * 0.587 + diffB * diffB * 0.114) * 0.75 + lumaDifference * lumaDifference
+        val redDifference = (a.x - b.x) / 255.0
+        val greenDifference = (a.y - b.y) / 255.0
+        val blueDifference = (a.z - b.z) / 255.0
+        return (redDifference * redDifference * 0.299 +
+                greenDifference * greenDifference * 0.587 +
+                blueDifference * blueDifference * 0.114) * 0.75 +
+                lumaDifference * lumaDifference
     }
 }
 
