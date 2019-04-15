@@ -7,8 +7,8 @@ import com.bumptech.glide.load.resource.bitmap.BitmapTransformation
 import com.mitteloupe.photostyle.PaletteAndDither
 import com.mitteloupe.photostyle.clustering.KMeans
 import com.mitteloupe.photostyle.glide.extension.getEqualBitmap
+import com.mitteloupe.photostyle.graphics.BayerConverter
 import com.mitteloupe.photostyle.graphics.BitmapVector3Converter
-import com.mitteloupe.photostyle.graphics.FloydSteinbergConverter
 import com.mitteloupe.photostyle.graphics.RgbLabConverter
 import com.mitteloupe.photostyle.math.Vector3Arithmetic
 import java.security.MessageDigest
@@ -35,7 +35,7 @@ class ColorCountTransformation(
                 kMeans,
                 RgbLabConverter(),
                 BitmapVector3Converter(),
-                FloydSteinbergConverter()
+                BayerConverter()
             ).processImage(outputBitmap, colorCount)
         }
         Log.d("Benchmark", "Process image took ${benchmark / 1_000_000_000.0} seconds")

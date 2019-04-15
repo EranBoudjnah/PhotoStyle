@@ -25,4 +25,6 @@ class Vector3<T : Number>(
             else -> throw Exception("Vector3 dimension out of scope: $dimension")
         }
     }
+
+    override fun equals(other: Any?) = other is Vector3<*> && other.x == x && other.y == y && other.z == z
 }
