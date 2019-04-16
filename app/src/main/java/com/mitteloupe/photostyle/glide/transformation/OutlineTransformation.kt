@@ -9,15 +9,12 @@ import android.graphics.PorterDuff
 import android.graphics.PorterDuffXfermode
 import android.renderscript.Allocation
 import android.renderscript.RenderScript
-import android.util.Log
 import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool
 import com.bumptech.glide.load.resource.bitmap.BitmapTransformation
 import com.mitteloupe.photostyle.glide.extension.getEqualBitmap
-import com.mitteloupe.photostyle.graphics.BitmapVector3Converter
-import com.mitteloupe.photostyle.graphics.SobelEdgeDetection
 import com.mitteloupe.photostyle.renderscript.ScriptC_invert
+import com.mitteloupe.photostyle.renderscript.ScriptC_outline
 import java.security.MessageDigest
-import kotlin.system.measureNanoTime
 
 
 /**
@@ -39,28 +36,22 @@ class OutlineTransformation(
     override fun transform(pool: BitmapPool, toTransform: Bitmap, outWidth: Int, outHeight: Int): Bitmap {
         val outputBitmap = pool.getEqualBitmap(toTransform)
 
-        val benchmark = measureNanoTime {
-            SobelEdgeDetection(
-                BitmapVector3Converter()
-            ).processImage(toTransform, outputBitmap)
-        }
-        Log.d("Benchmark", "Process image took ${benchmark / 1_000_000_000.0} seconds")
-
         return when (mode) {
             Mode.OVERLAY -> {
                 val canvas = Canvas(toTransform)
 
-                canvas.drawBitmap(getInvertedBitmap(outputBitmap, pool), Matrix(), paint)
+                canvas.drawBitmap(getOutlineBitmap(toTransform, true, pool), Matrix(), paint)
 
                 toTransform
             }
-            Mode.BLACK_OUTLINES -> getInvertedBitmap(outputBitmap, pool)
-            Mode.WHITE_OUTLINES -> outputBitmap
+            Mode.BLACK_OUTLINES -> getOutlineBitmap(toTransform, true, pool)
+            Mode.WHITE_OUTLINES -> getOutlineBitmap(toTransform, false, pool)
         }
     }
 
-    private fun getInvertedBitmap(
+    private fun getOutlineBitmap(
         toTransform: Bitmap,
+        isInverted: Boolean,
         pool: BitmapPool
     ): Bitmap {
         val inPixelsAllocation = Allocation.createFromBitmap(
@@ -70,17 +61,25 @@ class OutlineTransformation(
             Allocation.USAGE_SCRIPT
         )
 
-        val outputBitmap = pool.getEqualBitmap(toTransform)
-        val outPixelsAllocation = Allocation.createFromBitmap(
+        val outPixelsAllocation = Allocation.createTyped(
             renderScript,
-            outputBitmap,
-            Allocation.MipmapControl.MIPMAP_NONE,
-            Allocation.USAGE_SCRIPT
+            inPixelsAllocation.type
         )
 
-        val script = ScriptC_invert(renderScript)
+        val outlineScript = ScriptC_outline(renderScript)
 
-        script.forEach_invert(inPixelsAllocation, outPixelsAllocation)
+        outlineScript._width = toTransform.width
+        outlineScript._height = toTransform.height
+        outlineScript._image = inPixelsAllocation
+        outlineScript.forEach_outline(inPixelsAllocation, outPixelsAllocation)
+
+        if (isInverted) {
+            val invertScript = ScriptC_invert(renderScript)
+
+            invertScript.forEach_invert(outPixelsAllocation, outPixelsAllocation)
+        }
+
+        val outputBitmap = pool.getEqualBitmap(toTransform)
         outPixelsAllocation.copyTo(outputBitmap)
         return outputBitmap
     }

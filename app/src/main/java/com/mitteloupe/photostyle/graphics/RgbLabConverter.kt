@@ -24,15 +24,6 @@ class RgbLabConverter {
         convertRgbVector3ToLab(sourceRgbMatrix[x, y])
     }
 
-    fun convertLabMatrixToRgb(
-        sourceLabMatrix: Matrix<Vector3<Double>>
-    ) = Matrix(
-        sourceLabMatrix.width,
-        sourceLabMatrix.height
-    ) { x, y ->
-        convertLabVector3ToRgb(sourceLabMatrix[x, y])
-    }
-
     fun convertLabArrayToRgb(paletteLab: Array<Vector3<Double>>) =
         Array(paletteLab.size) { index ->
             convertLabVector3ToRgb(paletteLab[index])
