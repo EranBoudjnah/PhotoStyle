@@ -2,21 +2,25 @@ package com.mitteloupe.photostyle.graphics.dithering
 
 import com.mitteloupe.photostyle.math.Matrix
 import com.mitteloupe.photostyle.math.Vector3
+import com.mitteloupe.photostyle.math.forEachIndexed
 
 /**
  * Created by Eran Boudjnah on 15/04/2019.
  */
 class FloydSteinbergConverter : RgbToPaletteConverter {
-    override fun applyPalette(imgOrig: Matrix<Vector3<Int>>, palette: Array<Vector3<Int>>): Matrix<Vector3<Int>> {
-        val img = Matrix(imgOrig.width, imgOrig.height)
-            { x, y ->
-                val pixelOriginal = imgOrig[x, y]
-                Vector3(pixelOriginal[0], pixelOriginal[1], pixelOriginal[2])
-            }
-        val resImg = Matrix(imgOrig.width, imgOrig.height)
-            { _, _ -> Vector3(0, 0, 0) }
+    override fun applyPalette(
+        sourceImage: Matrix<Vector3<Int>>,
+        palette: Array<Vector3<Int>>,
+        imageToPalette: IntArray
+    ): Matrix<Vector3<Int>> {
+        val img = Matrix(sourceImage.width, sourceImage.height)
+        { x, y ->
+            val pixelOriginal = sourceImage[x, y]
+            Vector3(pixelOriginal[0], pixelOriginal[1], pixelOriginal[2])
+        }
+        val resImg = Matrix(sourceImage.width, sourceImage.height) { x, y ->
+            val value = img[x, y]
 
-        img.forEachIndexed { value, x, y ->
             val newPixel = findClosestPaletteColor(value, palette)
 
             for (k in 0 until 3) {
@@ -34,6 +38,8 @@ class FloydSteinbergConverter : RgbToPaletteConverter {
                     img[x + 1, y + 1][k] += (1 * quantError) / 16
                 }
             }
+
+            Vector3(0, 0, 0)
         }
 
         img.forEachIndexed { value, x, y ->
@@ -93,12 +99,4 @@ class FloydSteinbergConverter : RgbToPaletteConverter {
 //        var i = deltaLKlsl * deltaLKlsl + deltaCkcsc * deltaCkcsc + deltaHkhsh * deltaHkhsh;
 //        return i < 0 ? 0 : Math.sqrt(i);
 //    }
-}
-
-private inline fun <T : Any> Matrix<T>.forEachIndexed(function: (value: T, x: Int, y: Int) -> Unit) {
-    for (i in 0 until width) {
-        for (j in 0 until height) {
-            function(this[i, j], i, j)
-        }
-    }
 }

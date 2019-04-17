@@ -16,7 +16,8 @@ class Matrix<T : Any>(
         } as Array<Array<T>>
     }
 
-    @Suppress("UNCHECKED_CAST")
+    operator fun get(x: Int) = array[x]
+
     operator fun get(x: Int, y: Int) = array[x][y]
 
     operator fun set(x: Int, y: Int, value: T) {

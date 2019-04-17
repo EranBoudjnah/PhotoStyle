@@ -8,7 +8,7 @@ import com.mitteloupe.photostyle.math.Vector3
 /**
  * Created by Eran Boudjnah on 15/04/2019.
  */
-class BitmapVector3Converter() {
+class BitmapVector3Converter {
     private var width: Int = 0
     private var height: Int = 0
     private lateinit var pixels: IntArray

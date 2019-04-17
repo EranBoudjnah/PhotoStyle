@@ -6,8 +6,8 @@ import androidx.annotation.IntRange
 import com.mitteloupe.photostyle.clustering.KMeans
 import com.mitteloupe.photostyle.clustering.KMeans.TerminationCriteria
 import com.mitteloupe.photostyle.graphics.dithering.RgbToPaletteConverter
-import com.mitteloupe.photostyle.math.Matrix
 import com.mitteloupe.photostyle.math.Vector3
+import com.mitteloupe.photostyle.math.toVector
 import kotlin.system.measureNanoTime
 
 /**
@@ -16,8 +16,6 @@ import kotlin.system.measureNanoTime
 
 class PaletteAndDither(
     sourceBitmap: Bitmap,
-    private val kMeans: KMeans<Vector3<Double>>,
-    private val rgbLabConverter: RgbLabConverter,
     private val bitmapVector3Converter: BitmapVector3Converter,
     private val rgbToPaletteConverter: RgbToPaletteConverter
 ) {
@@ -29,7 +27,33 @@ class PaletteAndDither(
         bitmapVector3Converter.bitmapToVector3Matrix(sourceBitmap)
     }
 
-    fun processImage(targetBitmap: Bitmap, @IntRange(from = 2L, to = 255L) colorsCount: Int) {
+    fun processImage(targetBitmap: Bitmap, paletteRgb: Array<Vector3<Int>>) {
+        val labels = IntArray(totalPixels)
+        val rgbMatrix = rgbToPaletteConverter.applyPalette(sourceRgbMatrix, paletteRgb, labels)
+        bitmapVector3Converter.vector3MatrixToBitmap(rgbMatrix, targetBitmap)
+    }
+
+    fun processImage(
+        targetBitmap: Bitmap,
+        @IntRange(from = 2L, to = 255L) colorsCount: Int,
+        kMeans: KMeans<Vector3<Double>>,
+        rgbLabConverter: RgbLabConverter
+    ) {
+        val (paletteLab, labels) = calculatePalette(rgbLabConverter, colorsCount, kMeans)
+
+        val benchmark = measureNanoTime {
+            val paletteRgb = rgbLabConverter.convertLabArrayToRgb(paletteLab)
+            val rgbMatrix = rgbToPaletteConverter.applyPalette(sourceRgbMatrix, paletteRgb, labels)
+            bitmapVector3Converter.vector3MatrixToBitmap(rgbMatrix, targetBitmap)
+        }
+        Log.d("Benchmark", "Applying palette took ${benchmark / 1_000_000_000.0} seconds")
+    }
+
+    private fun calculatePalette(
+        rgbLabConverter: RgbLabConverter,
+        colorsCount: Int,
+        kMeans: KMeans<Vector3<Double>>
+    ): Pair<Array<Vector3<Double>>, IntArray> {
         val sourceLabMatrix = rgbLabConverter.convertRgbMatrixToLab(sourceRgbMatrix)
 
         val colorsVector: Array<Vector3<Double>> = sourceLabMatrix.toVector()
@@ -37,7 +61,7 @@ class PaletteAndDither(
         val labels = IntArray(totalPixels)
         val paletteLab = Array(colorsCount) { Vector3(0.0, 0.0, 0.0) }
 
-        val benchmark1 = measureNanoTime {
+        val benchmark = measureNanoTime {
             kMeans.execute(
                 colorsVector,
                 colorsCount,
@@ -46,46 +70,7 @@ class PaletteAndDither(
                 paletteLab
             )
         }
-        Log.d("Benchmark", "K-Means took ${benchmark1 / 1_000_000_000.0} seconds")
-
-        // replace pixels by their corresponding image centers
-//        val posterizedLabMatrix = Matrix<Vector3<Double>>(imageWidth, imageHeight)
-//            .initialize { _, _ -> Vector3(0.0, 0.0, 0.0) }
-//        for (i in 0 until sourceLabMatrix.width) {
-//            for (j in 0 until sourceLabMatrix.height) {
-//                for (k in 0 until 3) {
-//                    posterizedLabMatrix[i, j][k] = palette[labels[j + sourceLabMatrix.width * i]][k]
-//                }
-//            }
-//        }
-
-        val benchmark2 = measureNanoTime {
-            val paletteRgb = rgbLabConverter.convertLabArrayToRgb(paletteLab)
-            val rgbMatrix = rgbToPaletteConverter.applyPalette(sourceRgbMatrix, paletteRgb)
-            bitmapVector3Converter.vector3MatrixToBitmap(rgbMatrix, targetBitmap)
-        }
-        Log.d("Benchmark", "Applying palette took ${benchmark2 / 1_000_000_000.0} seconds")
+        Log.d("Benchmark", "K-Means took ${benchmark / 1_000_000_000.0} seconds")
+        return Pair(paletteLab, labels)
     }
 }
-
-private inline fun <reified T : Any> Matrix<T>.toVector(): Array<T> {
-    val result: Array<T?> = arrayOfNulls(width * height)
-    var index = 0
-    forEachIndexed { value, _, _ ->
-        result[index] = value
-        index++
-    }
-    @Suppress("UNCHECKED_CAST")
-    return result as Array<T>
-}
-
-private inline fun <T : Any> Matrix<T>.forEachIndexed(function: (value: T, x: Int, y: Int) -> Unit) {
-    for (i in 0 until width) {
-        for (j in 0 until height) {
-            function(this[i, j], i, j)
-        }
-    }
-}
-
-private operator fun Vector3<Int>.minus(vector3: Vector3<Int>) =
-    Vector3(x - vector3.x, y - vector3.y, z - vector3.z)

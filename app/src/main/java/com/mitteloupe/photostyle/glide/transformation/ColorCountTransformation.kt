@@ -32,11 +32,9 @@ class ColorCountTransformation(
         val benchmark = measureNanoTime {
             PaletteAndDither(
                 toTransform,
-                kMeans,
-                RgbLabConverter(),
                 BitmapVector3Converter(),
                 BayerConverter()
-            ).processImage(outputBitmap, colorCount)
+            ).processImage(outputBitmap, colorCount, kMeans, RgbLabConverter())
         }
         Log.d("Benchmark", "Process image took ${benchmark / 1_000_000_000.0} seconds")
 

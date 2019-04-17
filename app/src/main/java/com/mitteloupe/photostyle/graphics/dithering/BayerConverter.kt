@@ -19,28 +19,27 @@ private val bayerMatrix = arrayOf(
  * Created by Eran Boudjnah on 15/04/2019.
  */
 class BayerConverter : RgbToPaletteConverter {
-    override fun applyPalette(imgOrig: Matrix<Vector3<Int>>, palette: Array<Vector3<Int>>): Matrix<Vector3<Int>> {
-        val img = Matrix(imgOrig.width, imgOrig.height)
-            { x, y ->
-                val pixelOriginal = imgOrig[x, y]
-                Vector3(pixelOriginal.x, pixelOriginal.y, pixelOriginal.z)
-            }
-        val resImg = Matrix(imgOrig.width, imgOrig.height)
-            { _, _ -> Vector3(0, 0, 0) }
+    override fun applyPalette(
+        sourceImage: Matrix<Vector3<Int>>,
+        palette: Array<Vector3<Int>>,
+        imageToPalette: IntArray
+    ): Matrix<Vector3<Int>> {
+        val img = Matrix(sourceImage.width, sourceImage.height) { x, y ->
+            val pixelOriginal = sourceImage[x, y]
+            Vector3(pixelOriginal.x, pixelOriginal.y, pixelOriginal.z)
+        }
 
         val scale = 256.0 / palette.size.toDouble()
 
-        img.forEachIndexed { color, x, y ->
+        return Matrix(sourceImage.width, sourceImage.height) { x, y ->
+            val color = img[x, y]
             val ditherMapValue = bayerMatrix[x % 8 + (y % 8) * 8] / 64.0 - 0.5
             val scaledDitherValue = ditherMapValue * scale
             color.x = (color.x.toDouble() + scaledDitherValue).toInt().clamp(0, 255)
             color.y = (color.y.toDouble() + scaledDitherValue).toInt().clamp(0, 255)
             color.z = (color.z.toDouble() + scaledDitherValue).toInt().clamp(0, 255)
-            val colorIndex = findClosestPaletteColor(color, palette)
-            resImg[x, y] = colorIndex
+            findClosestPaletteColor(color, palette)
         }
-
-        return resImg
     }
 
     private fun findClosestPaletteColor(
@@ -72,13 +71,5 @@ class BayerConverter : RgbToPaletteConverter {
                 greenDifference * greenDifference * 0.587 +
                 blueDifference * blueDifference * 0.114) * 0.75 +
                 lumaDifference * lumaDifference
-    }
-}
-
-private inline fun <T : Any> Matrix<T>.forEachIndexed(function: (value: T, x: Int, y: Int) -> Unit) {
-    for (i in 0 until width) {
-        for (j in 0 until height) {
-            function(this[i, j], i, j)
-        }
     }
 }
