@@ -10,8 +10,8 @@ fun Float.clamp(min: Float, max: Float) = Math.max(min, Math.min(this, max))
 fun Int.clamp(min: Int, max: Int) = Math.max(min, Math.min(this, max))
 
 inline fun <T : Any> Matrix<T>.forEachIndexed(function: (value: T, x: Int, y: Int) -> Unit) {
-    for (x in 0 until width) {
-        this[x].forEachIndexed { y, value -> function(value, x, y) }
+    for (y in 0 until height) {
+        this[y].forEachIndexed { x, value -> function(value, x, y) }
     }
 }
 

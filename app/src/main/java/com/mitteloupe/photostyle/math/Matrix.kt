@@ -1,5 +1,7 @@
 package com.mitteloupe.photostyle.math
 
+import android.util.Log
+
 class Matrix<T : Any>(
     val width: Int,
     val height: Int,
@@ -9,18 +11,19 @@ class Matrix<T : Any>(
 
     init {
         @Suppress("UNCHECKED_CAST")
-        array = Array(width) { x ->
-            Array(height) { y ->
+        array = Array(height) { y ->
+            Array(width) { x ->
+                Log.d("Debug", "$x x $y")
                 initialValue(x, y) as Any
             }
         } as Array<Array<T>>
     }
 
-    operator fun get(x: Int) = array[x]
+    operator fun get(y: Int) = array[y]
 
-    operator fun get(x: Int, y: Int) = array[x][y]
+    operator fun get(x: Int, y: Int) = array[y][x]
 
     operator fun set(x: Int, y: Int, value: T) {
-        array[x][y] = value
+        array[y][x] = value
     }
 }

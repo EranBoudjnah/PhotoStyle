@@ -4,7 +4,6 @@ import android.graphics.Bitmap
 import com.mitteloupe.photostyle.graphics.BitmapVector3Converter
 import com.mitteloupe.photostyle.math.Matrix
 import com.mitteloupe.photostyle.math.Vector3
-import com.mitteloupe.photostyle.math.forEachIndexed
 
 /**
  * Created by Eran Boudjnah on 15/04/2019.
@@ -34,26 +33,22 @@ class FloydSteinbergConverter(
 
             for (k in 0 until 3) {
                 val quantError = value[k] - newPixel[k]
+                value[k] = newPixel[k]
                 if (x + 1 < img.width) {
-                    img[x + 1, y][k] += (7 * quantError) / 16
-                }
-                if (x - 1 > 0 && y + 1 < img.height) {
-                    img[x - 1, y + 1][k] += (3 * quantError) / 16
+                    img[x + 1, y][k] += (quantError * 7) shr 4
                 }
                 if (y + 1 < img.height) {
-                    img[x, y + 1][k] += (5 * quantError) / 16
-                }
-                if (x + 1 < img.width && y + 1 < img.height) {
-                    img[x + 1, y + 1][k] += (1 * quantError) / 16
+                    img[x, y + 1][k] += (quantError * 5) shr 4
+                    if (x - 1 > 0) {
+                        img[x - 1, y + 1][k] += (quantError * 3) shr 4
+                    }
+                    if (x + 1 < img.width) {
+                        img[x + 1, y + 1][k] += quantError shr 4
+                    }
                 }
             }
 
-            Vector3(0, 0, 0)
-        }
-
-        img.forEachIndexed { value, x, y ->
-            val newPixel = findClosestPaletteColor(value, palette)
-            resImg[x, y] = newPixel
+            value
         }
 
         bitmapVector3Converter.vector3MatrixToBitmap(resImg, targetBitmap)
