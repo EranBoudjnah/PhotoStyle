@@ -34,8 +34,6 @@ class OutlineTransformation(
     }
 
     override fun transform(pool: BitmapPool, toTransform: Bitmap, outWidth: Int, outHeight: Int): Bitmap {
-        val outputBitmap = pool.getEqualBitmap(toTransform)
-
         return when (mode) {
             Mode.OVERLAY -> {
                 val canvas = Canvas(toTransform)

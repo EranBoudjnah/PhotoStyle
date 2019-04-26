@@ -15,49 +15,45 @@ import kotlin.system.measureNanoTime
  */
 
 class PaletteAndDither(
-    sourceBitmap: Bitmap,
     private val bitmapVector3Converter: BitmapVector3Converter,
     private val rgbToPaletteConverter: RgbToPaletteConverter
 ) {
-    private val imageWidth = sourceBitmap.width
-    private val imageHeight = sourceBitmap.height
-    private val totalPixels = imageWidth * imageHeight
-    private val sourceRgbMatrix by lazy {
-        bitmapVector3Converter.initialize(imageWidth, imageHeight)
-        bitmapVector3Converter.bitmapToVector3Matrix(sourceBitmap)
-    }
-
-    fun processImage(targetBitmap: Bitmap, paletteRgb: Array<Vector3<Int>>) {
+    fun processImage(sourceBitmap: Bitmap, targetBitmap: Bitmap, paletteRgb: Array<Vector3<Int>>) {
+        val totalPixels = sourceBitmap.width * sourceBitmap.height
         val labels = IntArray(totalPixels)
-        val rgbMatrix = rgbToPaletteConverter.applyPalette(sourceRgbMatrix, paletteRgb, labels)
-        bitmapVector3Converter.vector3MatrixToBitmap(rgbMatrix, targetBitmap)
+        rgbToPaletteConverter.applyPalette(sourceBitmap, targetBitmap, paletteRgb, labels)
     }
 
     fun processImage(
+        sourceBitmap: Bitmap,
         targetBitmap: Bitmap,
         @IntRange(from = 2L, to = 255L) colorsCount: Int,
         kMeans: KMeans<Vector3<Double>>,
         rgbLabConverter: RgbLabConverter
     ) {
-        val (paletteLab, labels) = calculatePalette(rgbLabConverter, colorsCount, kMeans)
+        val (paletteLab, labels) = calculatePalette(sourceBitmap, rgbLabConverter, colorsCount, kMeans)
 
         val benchmark = measureNanoTime {
             val paletteRgb = rgbLabConverter.convertLabArrayToRgb(paletteLab)
-            val rgbMatrix = rgbToPaletteConverter.applyPalette(sourceRgbMatrix, paletteRgb, labels)
-            bitmapVector3Converter.vector3MatrixToBitmap(rgbMatrix, targetBitmap)
+            rgbToPaletteConverter.applyPalette(sourceBitmap, targetBitmap, paletteRgb, labels)
         }
         Log.d("Benchmark", "Applying palette took ${benchmark / 1_000_000_000.0} seconds")
     }
 
     private fun calculatePalette(
+        sourceBitmap: Bitmap,
         rgbLabConverter: RgbLabConverter,
         colorsCount: Int,
         kMeans: KMeans<Vector3<Double>>
     ): Pair<Array<Vector3<Double>>, IntArray> {
+        bitmapVector3Converter.initialize(sourceBitmap.width, sourceBitmap.height)
+        val sourceRgbMatrix = bitmapVector3Converter.bitmapToVector3Matrix(sourceBitmap)
+
         val sourceLabMatrix = rgbLabConverter.convertRgbMatrixToLab(sourceRgbMatrix)
 
         val colorsVector: Array<Vector3<Double>> = sourceLabMatrix.toVector()
 
+        val totalPixels = sourceBitmap.width * sourceBitmap.height
         val labels = IntArray(totalPixels)
         val paletteLab = Array(colorsCount) { Vector3(0.0, 0.0, 0.0) }
 

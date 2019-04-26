@@ -1,6 +1,7 @@
 package com.mitteloupe.photostyle.glide.transformation
 
 import android.graphics.Bitmap
+import android.renderscript.RenderScript
 import android.util.Log
 import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool
 import com.bumptech.glide.load.resource.bitmap.BitmapTransformation
@@ -10,6 +11,7 @@ import com.mitteloupe.photostyle.graphics.BitmapVector3Converter
 import com.mitteloupe.photostyle.graphics.PaletteAndDither
 import com.mitteloupe.photostyle.graphics.RgbLabConverter
 import com.mitteloupe.photostyle.graphics.dithering.BayerConverter
+import com.mitteloupe.photostyle.graphics.dithering.RgbToPaletteConverter
 import com.mitteloupe.photostyle.math.Vector3Arithmetic
 import java.security.MessageDigest
 import kotlin.system.measureNanoTime
@@ -18,7 +20,10 @@ import kotlin.system.measureNanoTime
  * Created by Eran Boudjnah on 11/04/2019.
  */
 class ColorCountTransformation(
-    private val colorCount: Int = 16
+    private val renderScript: RenderScript,
+    private val colorCount: Int = 16,
+    private val bitmapVector3Converter: BitmapVector3Converter = BitmapVector3Converter(),
+    private val rgbToPaletteConverter: RgbToPaletteConverter = BayerConverter(renderScript)
 ) : BitmapTransformation() {
     private val id = "com.mitteloupe.photostyle.glide.transformation.ColorCountTransformation:$colorCount"
 
@@ -31,10 +36,9 @@ class ColorCountTransformation(
 
         val benchmark = measureNanoTime {
             PaletteAndDither(
-                toTransform,
-                BitmapVector3Converter(),
-                BayerConverter()
-            ).processImage(outputBitmap, colorCount, kMeans, RgbLabConverter())
+                bitmapVector3Converter,
+                rgbToPaletteConverter
+            ).processImage(toTransform, outputBitmap, colorCount, kMeans, RgbLabConverter())
         }
         Log.d("Benchmark", "Process image took ${benchmark / 1_000_000_000.0} seconds")
 

@@ -4,13 +4,11 @@ import android.graphics.Bitmap
 import android.util.Log
 import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool
 import com.bumptech.glide.load.resource.bitmap.BitmapTransformation
-import com.mitteloupe.photostyle.clustering.KMeans
 import com.mitteloupe.photostyle.glide.extension.getEqualBitmap
 import com.mitteloupe.photostyle.graphics.BitmapVector3Converter
 import com.mitteloupe.photostyle.graphics.PaletteAndDither
 import com.mitteloupe.photostyle.graphics.dithering.RgbToPaletteConverter
 import com.mitteloupe.photostyle.math.Vector3
-import com.mitteloupe.photostyle.math.Vector3Arithmetic
 import java.security.MessageDigest
 import kotlin.system.measureNanoTime
 
@@ -23,19 +21,14 @@ class FixedPaletteTransformation(
 ) : BitmapTransformation() {
     private val id = "com.mitteloupe.photostyle.glide.transformation.FixedPaletteTransformation:$palette"
 
-    private val arithmetic = Vector3Arithmetic()
-
-    private val kMeans by lazy { KMeans(arithmetic) }
-
     override fun transform(pool: BitmapPool, toTransform: Bitmap, outWidth: Int, outHeight: Int): Bitmap {
         val outputBitmap = pool.getEqualBitmap(toTransform)
 
         val benchmark = measureNanoTime {
             PaletteAndDither(
-                toTransform,
                 BitmapVector3Converter(),
                 rgbToPaletteConverter
-            ).processImage(outputBitmap, palette.colors)
+            ).processImage(toTransform, outputBitmap, palette.colors)
         }
         Log.d("Benchmark", "Process image took ${benchmark / 1_000_000_000.0} seconds")
 

@@ -1,5 +1,7 @@
 package com.mitteloupe.photostyle.graphics.dithering
 
+import android.graphics.Bitmap
+import com.mitteloupe.photostyle.graphics.BitmapVector3Converter
 import com.mitteloupe.photostyle.math.Matrix
 import com.mitteloupe.photostyle.math.Vector3
 import com.mitteloupe.photostyle.math.forEachIndexed
@@ -7,18 +9,25 @@ import com.mitteloupe.photostyle.math.forEachIndexed
 /**
  * Created by Eran Boudjnah on 15/04/2019.
  */
-class FloydSteinbergConverter : RgbToPaletteConverter {
+class FloydSteinbergConverter(
+    private val bitmapVector3Converter: BitmapVector3Converter
+) : RgbToPaletteConverter {
+
     override fun applyPalette(
-        sourceImage: Matrix<Vector3<Int>>,
+        sourceBitmap: Bitmap,
+        targetBitmap: Bitmap,
         palette: Array<Vector3<Int>>,
         imageToPalette: IntArray
-    ): Matrix<Vector3<Int>> {
-        val img = Matrix(sourceImage.width, sourceImage.height)
+    ) {
+        initConverter(sourceBitmap)
+
+        val sourceMatrix = bitmapToMatrix(sourceBitmap)
+        val img = Matrix(sourceBitmap.width, sourceBitmap.height)
         { x, y ->
-            val pixelOriginal = sourceImage[x, y]
+            val pixelOriginal = sourceMatrix[x, y]
             Vector3(pixelOriginal[0], pixelOriginal[1], pixelOriginal[2])
         }
-        val resImg = Matrix(sourceImage.width, sourceImage.height) { x, y ->
+        val resImg = Matrix(sourceBitmap.width, sourceBitmap.height) { x, y ->
             val value = img[x, y]
 
             val newPixel = findClosestPaletteColor(value, palette)
@@ -47,7 +56,11 @@ class FloydSteinbergConverter : RgbToPaletteConverter {
             resImg[x, y] = newPixel
         }
 
-        return resImg
+        bitmapVector3Converter.vector3MatrixToBitmap(resImg, targetBitmap)
+    }
+
+    private fun initConverter(sourceBitmap: Bitmap) {
+        bitmapVector3Converter.initialize(sourceBitmap.width, sourceBitmap.height)
     }
 
     private fun findClosestPaletteColor(
@@ -66,6 +79,10 @@ class FloydSteinbergConverter : RgbToPaletteConverter {
         }
 
         return palette[minI]
+    }
+
+    private fun bitmapToMatrix(sourceBitmap: Bitmap): Matrix<Vector3<Int>> {
+        return bitmapVector3Converter.bitmapToVector3Matrix(sourceBitmap)
     }
 
     private fun vec3bDist(a: Vector3<Int>, b: Vector3<Int>): Double {

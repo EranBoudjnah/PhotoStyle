@@ -1,6 +1,6 @@
 package com.mitteloupe.photostyle.graphics.dithering
 
-import com.mitteloupe.photostyle.math.Matrix
+import android.graphics.Bitmap
 import com.mitteloupe.photostyle.math.Vector3
 
 /**
@@ -8,8 +8,9 @@ import com.mitteloupe.photostyle.math.Vector3
  */
 interface RgbToPaletteConverter {
     fun applyPalette(
-        sourceImage: Matrix<Vector3<Int>>,
+        sourceBitmap: Bitmap,
+        targetBitmap: Bitmap,
         palette: Array<Vector3<Int>>,
         imageToPalette: IntArray
-    ): Matrix<Vector3<Int>>
+    )
 }
