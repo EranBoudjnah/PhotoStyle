@@ -35,9 +35,9 @@ class FloydSteinbergConverter(
                     sourceMatrix[x, y + 1][k] += (quantError * 5) shr 4
                     if (x - 1 > 0) {
                         sourceMatrix[x - 1, y + 1][k] += (quantError * 3) shr 4
-                    }
-                    if (x + 1 < sourceMatrix.width) {
-                        sourceMatrix[x + 1, y + 1][k] += quantError shr 4
+                        if (x + 1 < sourceMatrix.width) {
+                            sourceMatrix[x + 1, y + 1][k] += quantError shr 4
+                        }
                     }
                 }
             }
