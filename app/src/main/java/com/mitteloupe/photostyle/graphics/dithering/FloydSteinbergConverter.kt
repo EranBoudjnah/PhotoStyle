@@ -21,29 +21,23 @@ class FloydSteinbergConverter(
         initConverter(sourceBitmap)
 
         val sourceMatrix = bitmapToMatrix(sourceBitmap)
-        val img = Matrix(sourceBitmap.width, sourceBitmap.height)
-        { x, y ->
-            val pixelOriginal = sourceMatrix[x, y]
-            Vector3(pixelOriginal[0], pixelOriginal[1], pixelOriginal[2])
-        }
         val resImg = Matrix(sourceBitmap.width, sourceBitmap.height) { x, y ->
-            val value = img[x, y]
-
+            val value = sourceMatrix[x, y]
             val newPixel = findClosestPaletteColor(value, palette)
 
             for (k in 0 until 3) {
                 val quantError = value[k] - newPixel[k]
                 value[k] = newPixel[k]
-                if (x + 1 < img.width) {
-                    img[x + 1, y][k] += (quantError * 7) shr 4
+                if (x + 1 < sourceMatrix.width) {
+                    sourceMatrix[x + 1, y][k] += (quantError * 7) shr 4
                 }
-                if (y + 1 < img.height) {
-                    img[x, y + 1][k] += (quantError * 5) shr 4
+                if (y + 1 < sourceMatrix.height) {
+                    sourceMatrix[x, y + 1][k] += (quantError * 5) shr 4
                     if (x - 1 > 0) {
-                        img[x - 1, y + 1][k] += (quantError * 3) shr 4
+                        sourceMatrix[x - 1, y + 1][k] += (quantError * 3) shr 4
                     }
-                    if (x + 1 < img.width) {
-                        img[x + 1, y + 1][k] += quantError shr 4
+                    if (x + 1 < sourceMatrix.width) {
+                        sourceMatrix[x + 1, y + 1][k] += quantError shr 4
                     }
                 }
             }
@@ -63,10 +57,10 @@ class FloydSteinbergConverter(
         palette: Array<Vector3<Int>>
     ): Vector3<Int> {
         var minI = 0
-        var minDistance = vec3bDist(color, palette[0])
+        var minDistance = colorDistance(color, palette[0])
 
         palette.forEachIndexed { index, currentColor ->
-            val distance = vec3bDist(color, currentColor)
+            val distance = colorDistance(color, currentColor)
             if (distance < minDistance) {
                 minDistance = distance
                 minI = index
@@ -76,23 +70,19 @@ class FloydSteinbergConverter(
         return palette[minI]
     }
 
-    private fun bitmapToMatrix(sourceBitmap: Bitmap): Matrix<Vector3<Int>> {
-        return bitmapVector3Converter.bitmapToVector3Matrix(sourceBitmap)
-    }
+    private fun bitmapToMatrix(sourceBitmap: Bitmap) = bitmapVector3Converter.bitmapToVector3Matrix(sourceBitmap)
 
-    private fun vec3bDist(a: Vector3<Int>, b: Vector3<Int>): Double {
-        val luma1 = (a.x * 299 + a.y * 587 + a.z * 114) / (255.0 * 1000)
-        val luma2 = (b.x * 299 + b.y * 587 + b.z * 114) / (255.0 * 1000)
-        val lumadiff = luma1 - luma2
-        val diffR = (a.x - b.x) / 255.0
-        val diffG = (a.y - b.y) / 255.0
-        val diffB = (a.z - b.z) / 255.0
-        return (diffR * diffR * 0.299 + diffG * diffG * 0.587 + diffB * diffB * 0.114) * 0.75 + lumadiff * lumadiff
-
-//        val x = a.x - b.x
-//        val y = a.y - b.y
-//        val z = a.z - b.z
-//        return x * x + y * y + z * z
+    private fun colorDistance(a: Vector3<Int>, b: Vector3<Int>): Double {
+        val luma1 = 299 * a.x + 587 * a.y + a.z * 114
+        val luma2 = 299 * b.x + 587 * b.y + b.z * 114
+        val lumaDifference = (luma1 - luma2) / 1000
+        val redDifference = a.x - b.x
+        val greenDifference = a.y - b.y
+        val blueDifference = a.z - b.z
+        return (redDifference * redDifference * 0.299 +
+                greenDifference * greenDifference * 0.587 +
+                blueDifference * blueDifference * 0.114) * 0.75 +
+                lumaDifference * lumaDifference
     }
 //    function perceptualDistance(labA, labB){
 //        var deltaL = labA[0] - labB[0];
