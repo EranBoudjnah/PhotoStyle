@@ -29,7 +29,7 @@ class BayerConverter(private val renderScript: RenderScript) : RgbToPaletteConve
 
         val paletteAllocation = getPaletteAllocation(renderScript, palette)
         bayerScript._palette = paletteAllocation
-        bayerScript.invoke_prepare(palette.size.toLong())
+        bayerScript.invoke_prepare()
 
         val outPixelsAllocation = Allocation.createTyped(
             renderScript,

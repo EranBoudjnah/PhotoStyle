@@ -59,6 +59,7 @@ class FloydSteinbergConverter(private val renderScript: RenderScript) : RgbToPal
 
         floydSteinbergScript._errorMap = errorMapAllocation
 
+        floydSteinbergScript.forEach_initErrorMap(inPixelsAllocation, inPixelsAllocation)
         floydSteinbergScript.invoke_calculateError(inPixelsAllocation)
     }
 
@@ -68,7 +69,7 @@ class FloydSteinbergConverter(private val renderScript: RenderScript) : RgbToPal
     ) {
         val paletteAllocation = getPaletteAllocation(renderScript, palette)
         floydSteinbergScript._palette = paletteAllocation
-        floydSteinbergScript.invoke_prepare(palette.size.toLong())
+        floydSteinbergScript.invoke_prepare()
     }
 
     private fun getErrorMapAllocation(sourceBitmap: Bitmap): Allocation? {
