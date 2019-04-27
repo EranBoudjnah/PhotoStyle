@@ -1,16 +1,18 @@
 package com.mitteloupe.photostyle.graphics.dithering
 
 import android.graphics.Bitmap
-import com.mitteloupe.photostyle.graphics.BitmapVector3Converter
-import com.mitteloupe.photostyle.math.Matrix
+import android.renderscript.Allocation
+import android.renderscript.Element
+import android.renderscript.RenderScript
+import android.renderscript.Type
 import com.mitteloupe.photostyle.math.Vector3
+import com.mitteloupe.photostyle.renderscript.ScriptC_floydSteinberg
+
 
 /**
  * Created by Eran Boudjnah on 15/04/2019.
  */
-class FloydSteinbergConverter(
-    private val bitmapVector3Converter: BitmapVector3Converter
-) : RgbToPaletteConverter {
+class FloydSteinbergConverter(private val renderScript: RenderScript) : RgbToPaletteConverter {
 
     override fun applyPalette(
         sourceBitmap: Bitmap,
@@ -18,72 +20,84 @@ class FloydSteinbergConverter(
         palette: Array<Vector3<Int>>,
         imageToPalette: IntArray
     ) {
-        initConverter(sourceBitmap)
+        val inPixelsAllocation = Allocation.createFromBitmap(
+            renderScript,
+            sourceBitmap,
+            Allocation.MipmapControl.MIPMAP_NONE,
+            Allocation.USAGE_SCRIPT
+        )
 
-        val sourceMatrix = bitmapToMatrix(sourceBitmap)
-        val resImg = Matrix(sourceBitmap.width, sourceBitmap.height) { x, y ->
-            val value = sourceMatrix[x, y]
-            val newPixel = findClosestPaletteColor(value, palette)
+        val floydSteinbergScript = ScriptC_floydSteinberg(renderScript)
 
-            for (k in 0 until 3) {
-                val quantError = value[k] - newPixel[k]
-                value[k] = newPixel[k]
-                if (x + 1 < sourceMatrix.width) {
-                    sourceMatrix[x + 1, y][k] += (quantError * 7) shr 4
-                }
-                if (y + 1 < sourceMatrix.height) {
-                    sourceMatrix[x, y + 1][k] += (quantError * 5) shr 4
-                    if (x - 1 > 0) {
-                        sourceMatrix[x - 1, y + 1][k] += (quantError * 3) shr 4
-                        if (x + 1 < sourceMatrix.width) {
-                            sourceMatrix[x + 1, y + 1][k] += quantError shr 4
-                        }
-                    }
-                }
-            }
+        setUpPalette(palette, floydSteinbergScript)
 
-            value
-        }
+        setUpErrorMap(sourceBitmap, floydSteinbergScript, inPixelsAllocation)
 
-        bitmapVector3Converter.vector3MatrixToBitmap(resImg, targetBitmap)
+        applyPalette(inPixelsAllocation, floydSteinbergScript, targetBitmap)
     }
 
-    private fun initConverter(sourceBitmap: Bitmap) {
-        bitmapVector3Converter.initialize(sourceBitmap.width, sourceBitmap.height)
+    private fun applyPalette(
+        inPixelsAllocation: Allocation,
+        floydSteinbergScript: ScriptC_floydSteinberg,
+        targetBitmap: Bitmap
+    ) {
+        val outPixelsAllocation = Allocation.createTyped(
+            renderScript,
+            inPixelsAllocation.type
+        )
+
+        floydSteinbergScript.forEach_applyColor(inPixelsAllocation, outPixelsAllocation)
+        outPixelsAllocation.copyTo(targetBitmap)
     }
 
-    private fun findClosestPaletteColor(
-        color: Vector3<Int>,
+    private fun setUpErrorMap(
+        sourceBitmap: Bitmap,
+        floydSteinbergScript: ScriptC_floydSteinberg,
+        inPixelsAllocation: Allocation?
+    ) {
+        val errorMapAllocation = getErrorMapAllocation(sourceBitmap)
+
+        floydSteinbergScript._errorMap = errorMapAllocation
+
+        floydSteinbergScript.invoke_calculateError(inPixelsAllocation)
+    }
+
+    private fun setUpPalette(
+        palette: Array<Vector3<Int>>,
+        floydSteinbergScript: ScriptC_floydSteinberg
+    ) {
+        val paletteAllocation = getPaletteAllocation(renderScript, palette)
+        floydSteinbergScript._palette = paletteAllocation
+        floydSteinbergScript.invoke_prepare(palette.size.toLong())
+    }
+
+    private fun getErrorMapAllocation(sourceBitmap: Bitmap): Allocation? {
+        val rgbTypeBuilder = Type.Builder(renderScript, Element.F32_4(renderScript))
+        rgbTypeBuilder.setX(sourceBitmap.width)
+        rgbTypeBuilder.setY(sourceBitmap.height)
+
+        return Allocation.createTyped(
+            renderScript, rgbTypeBuilder.create(),
+            Allocation.USAGE_SCRIPT
+        )
+    }
+
+    private fun getPaletteAllocation(
+        renderScript: RenderScript?,
         palette: Array<Vector3<Int>>
-    ): Vector3<Int> {
-        var minI = 0
-        var minDistance = colorDistance(color, palette[0])
+    ): Allocation? {
+        val rgbaType = Type.Builder(renderScript, Element.RGBA_8888(renderScript))
+            .setX(palette.size)
+            .create()
 
-        palette.forEachIndexed { index, currentColor ->
-            val distance = colorDistance(color, currentColor)
-            if (distance < minDistance) {
-                minDistance = distance
-                minI = index
-            }
-        }
-
-        return palette[minI]
+        val paletteAllocation = Allocation.createTyped(renderScript, rgbaType)
+        val paletteShortArray = palette.flatMap { vector3 ->
+            listOf(vector3.x.toByte(), vector3.y.toByte(), vector3.z.toByte(), 255.toByte())
+        }.toByteArray()
+        paletteAllocation.copyFrom(paletteShortArray)
+        return paletteAllocation
     }
 
-    private fun bitmapToMatrix(sourceBitmap: Bitmap) = bitmapVector3Converter.bitmapToVector3Matrix(sourceBitmap)
-
-    private fun colorDistance(a: Vector3<Int>, b: Vector3<Int>): Double {
-        val luma1 = 299 * a.x + 587 * a.y + a.z * 114
-        val luma2 = 299 * b.x + 587 * b.y + b.z * 114
-        val lumaDifference = (luma1 - luma2) / 1000
-        val redDifference = a.x - b.x
-        val greenDifference = a.y - b.y
-        val blueDifference = a.z - b.z
-        return (redDifference * redDifference * 0.299 +
-                greenDifference * greenDifference * 0.587 +
-                blueDifference * blueDifference * 0.114) * 0.75 +
-                lumaDifference * lumaDifference
-    }
 //    function perceptualDistance(labA, labB){
 //        var deltaL = labA[0] - labB[0];
 //        var deltaA = labA[1] - labB[1];

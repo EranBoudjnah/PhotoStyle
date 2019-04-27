@@ -8,7 +8,7 @@ import com.mitteloupe.photostyle.glide.GlideApp
 import com.mitteloupe.photostyle.glide.transformation.FixedPaletteTransformation
 import com.mitteloupe.photostyle.glide.transformation.Palette
 import com.mitteloupe.photostyle.glide.transformation.ResizeTransformation
-import com.mitteloupe.photostyle.graphics.dithering.BayerConverter
+import com.mitteloupe.photostyle.graphics.dithering.FloydSteinbergConverter
 import kotlinx.android.synthetic.main.activity_main.preview_image as previewImageView
 
 class MainActivity : AppCompatActivity() {
@@ -26,7 +26,7 @@ class MainActivity : AppCompatActivity() {
             // "https://legismusic.com/wp-content/uploads/2017/07/christmas-royalty-free-music.jpg"
             // "https://library.creativecow.net/articles/hodgetts_philip/displacement/DisplacementGradient.gif"
             .transform(
-                ResizeTransformation(160),
+//                ResizeTransformation(320),
 //                InvertTransformation(this),
 //                GreyScaleTransformation(2f),
 //                PixelationTransformation(64),
@@ -34,7 +34,7 @@ class MainActivity : AppCompatActivity() {
 //                InvertTransformation(this),
 //                OutlineTransformation(this, OutlineTransformation.Mode.OVERLAY),
 //                ResizeTransformation(160),
-                FixedPaletteTransformation(Palette.GameBoy, BayerConverter(renderScript)),
+                FixedPaletteTransformation(Palette.GameBoy, FloydSteinbergConverter(renderScript)),
 //                ColorCountTransformation(renderScript, 16),
                 ResizeTransformation(640, smoothScale = false),
                 CenterInside()

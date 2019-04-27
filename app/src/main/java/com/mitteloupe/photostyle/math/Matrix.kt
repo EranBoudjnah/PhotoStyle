@@ -1,7 +1,5 @@
 package com.mitteloupe.photostyle.math
 
-import android.util.Log
-
 class Matrix<T : Any>(
     val width: Int,
     val height: Int,
@@ -13,7 +11,6 @@ class Matrix<T : Any>(
         @Suppress("UNCHECKED_CAST")
         array = Array(height) { y ->
             Array(width) { x ->
-                Log.d("Debug", "$x x $y")
                 initialValue(x, y) as Any
             }
         } as Array<Array<T>>
