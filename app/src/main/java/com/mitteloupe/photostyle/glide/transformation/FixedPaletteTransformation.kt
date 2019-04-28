@@ -205,6 +205,12 @@ sealed class Palette(val colors: Array<Vector3<Int>>) {
 
     object AMIGA : Palette(colors12Bit)
 
+    object Gray2Bit : Palette(grays2Bit)
+
+    object Gray3Bit : Palette(grays3Bit)
+
+    object Gray4Bit : Palette(grays4Bit)
+
     class Custom(colors: Array<Vector3<Int>>) : Palette(colors)
 
     companion object {
@@ -232,6 +238,39 @@ sealed class Palette(val colors: Array<Vector3<Int>>) {
                     lookup12BitColor[index and 15],
                     lookup12BitColor[(index shr 4) and 15],
                     lookup12BitColor[(index shr 8) and 15]
+                )
+            }
+        }
+
+        private val grays2Bit by lazy {
+            Array(4) { index ->
+                val color = (255 * index) / 3
+                Vector3(
+                    color,
+                    color,
+                    color
+                )
+            }
+        }
+
+        private val grays3Bit by lazy {
+            Array(8) { index ->
+                val color = lookup9BitColor[index]
+                Vector3(
+                    color,
+                    color,
+                    color
+                )
+            }
+        }
+
+        private val grays4Bit by lazy {
+            Array(16) { index ->
+                val color = lookup12BitColor[index]
+                Vector3(
+                    color,
+                    color,
+                    color
                 )
             }
         }
