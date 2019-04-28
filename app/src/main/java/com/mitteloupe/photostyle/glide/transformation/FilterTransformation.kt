@@ -5,18 +5,22 @@ import android.graphics.Canvas
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.Paint
+import android.graphics.PorterDuff
 import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool
-import com.bumptech.glide.load.resource.bitmap.BitmapTransformation
 import com.mitteloupe.photostyle.glide.extension.getEqualBitmap
-import java.security.MessageDigest
+import com.mitteloupe.photostyle.glide.transformation.layered.BitmapLayerPool
 
 /**
  * Created by Eran Boudjnah on 11/04/2019.
  */
+@Suppress("EqualsOrHashCode")
 class FilterTransformation(
-    private val filter: Filter
-) : BitmapTransformation() {
-    private val id = "com.mitteloupe.photostyle.glide.transformation.FilterTransformation:$filter"
+    private val filter: Filter,
+    private val blendMode: PorterDuff.Mode = PorterDuff.Mode.SRC,
+    layerIdentifier: Int = 0,
+    bitmapLayerPool: BitmapLayerPool?
+) : LayeredBitmapTransformation(layerIdentifier, bitmapLayerPool) {
+    override val id = "com.mitteloupe.photostyle.glide.transformation.FilterTransformation:$filter"
 
     private val colorMatrixColorFilter by lazy {
         ColorMatrixColorFilter(filter.colorMatrix)
@@ -31,7 +35,7 @@ class FilterTransformation(
     override fun transform(pool: BitmapPool, toTransform: Bitmap, outWidth: Int, outHeight: Int): Bitmap {
         val outputBitmap = pool.getEqualBitmap(toTransform)
 
-        return drawColorFilteredBitmap(toTransform, outputBitmap)
+        return storeOrBlendOutputBitmap(toTransform, drawColorFilteredBitmap(toTransform, outputBitmap), blendMode)
     }
 
     private fun drawColorFilteredBitmap(sourceBitmap: Bitmap, targetBitmap: Bitmap): Bitmap {
@@ -41,11 +45,6 @@ class FilterTransformation(
     }
 
     override fun equals(other: Any?) = other is FilterTransformation
-
-    override fun hashCode() = id.hashCode()
-
-    override fun updateDiskCacheKey(messageDigest: MessageDigest) =
-        messageDigest.update(id.toByteArray(CHARSET))
 }
 
 enum class Filter(val colorMatrix: ColorMatrix) {

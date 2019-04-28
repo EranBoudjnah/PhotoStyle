@@ -5,18 +5,22 @@ import android.graphics.Canvas
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.Paint
+import android.graphics.PorterDuff
 import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool
-import com.bumptech.glide.load.resource.bitmap.BitmapTransformation
 import com.mitteloupe.photostyle.glide.extension.getEqualBitmap
-import java.security.MessageDigest
+import com.mitteloupe.photostyle.glide.transformation.layered.BitmapLayerPool
 
 /**
  * Created by Eran Boudjnah on 11/04/2019.
  */
+@Suppress("EqualsOrHashCode")
 class GrayscaleTransformation(
-    private val saturation: Float = 0f
-) : BitmapTransformation() {
-    private val id = "com.mitteloupe.photostyle.glide.transformation.GreyScaleTransformation:$saturation"
+    private val saturation: Float = 0f,
+    private val blendMode: PorterDuff.Mode = PorterDuff.Mode.SRC,
+    layerIdentifier: Int = 0,
+    bitmapLayerPool: BitmapLayerPool?
+) : LayeredBitmapTransformation(layerIdentifier, bitmapLayerPool) {
+    override val id = "com.mitteloupe.photostyle.glide.transformation.GreyScaleTransformation:$saturation"
 
     private val saturationMatrix by lazy {
         ColorMatrix().apply {
@@ -35,7 +39,7 @@ class GrayscaleTransformation(
     override fun transform(pool: BitmapPool, toTransform: Bitmap, outWidth: Int, outHeight: Int): Bitmap {
         val outputBitmap = pool.getEqualBitmap(toTransform)
 
-        return drawDesaturatedBitmap(toTransform, outputBitmap)
+        return storeOrBlendOutputBitmap(toTransform, drawDesaturatedBitmap(toTransform, outputBitmap), blendMode)
     }
 
     private fun drawDesaturatedBitmap(sourceBitmap: Bitmap, targetBitmap: Bitmap): Bitmap {
@@ -46,10 +50,4 @@ class GrayscaleTransformation(
 
     override fun equals(other: Any?) = other is GrayscaleTransformation &&
             saturation == other.saturation
-
-    override fun hashCode() = id.hashCode()
-
-    override fun updateDiskCacheKey(messageDigest: MessageDigest) {
-        messageDigest.update(id.toByteArray(CHARSET))
-    }
 }

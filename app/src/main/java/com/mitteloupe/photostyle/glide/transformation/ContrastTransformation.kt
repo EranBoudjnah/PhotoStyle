@@ -5,20 +5,24 @@ import android.graphics.Canvas
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.Paint
-import androidx.annotation.FloatRange as AndroidFloatRange
+import android.graphics.PorterDuff
 import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool
-import com.bumptech.glide.load.resource.bitmap.BitmapTransformation
 import com.mitteloupe.photostyle.glide.extension.getEqualBitmap
-import java.security.MessageDigest
+import com.mitteloupe.photostyle.glide.transformation.layered.BitmapLayerPool
+import androidx.annotation.FloatRange as AndroidFloatRange
 
 /**
  * Created by Eran Boudjnah on 11/04/2019.
  */
+@Suppress("EqualsOrHashCode")
 class ContrastTransformation(
     @AndroidFloatRange(from = -1.0)
-    private val contrast: Float = 0f
-) : BitmapTransformation() {
-    private val id = "com.mitteloupe.photostyle.glide.transformation.ContrastTransformation:$contrast"
+    private val contrast: Float = 0f,
+    private val blendMode: PorterDuff.Mode = PorterDuff.Mode.SRC,
+    layerIdentifier: Int = 0,
+    bitmapLayerPool: BitmapLayerPool?
+) : LayeredBitmapTransformation(layerIdentifier, bitmapLayerPool) {
+    override val id = "com.mitteloupe.photostyle.glide.transformation.ContrastTransformation:$contrast"
 
     private val contrastMatrix by lazy {
         val scaleFactor = Math.max(0f, contrast + 1f)
@@ -46,7 +50,7 @@ class ContrastTransformation(
     override fun transform(pool: BitmapPool, toTransform: Bitmap, outWidth: Int, outHeight: Int): Bitmap {
         val outputBitmap = pool.getEqualBitmap(toTransform)
 
-        return drawFilteredBitmap(toTransform, outputBitmap)
+        return storeOrBlendOutputBitmap(toTransform, drawFilteredBitmap(toTransform, outputBitmap), blendMode)
     }
 
     private fun drawFilteredBitmap(sourceBitmap: Bitmap, targetBitmap: Bitmap): Bitmap {
@@ -57,10 +61,4 @@ class ContrastTransformation(
 
     override fun equals(other: Any?) = other is ContrastTransformation &&
             contrast == other.contrast
-
-    override fun hashCode() = id.hashCode()
-
-    override fun updateDiskCacheKey(messageDigest: MessageDigest) {
-        messageDigest.update(id.toByteArray(CHARSET))
-    }
 }

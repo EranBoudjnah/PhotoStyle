@@ -4,10 +4,11 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Matrix
 import android.graphics.Paint
+import android.graphics.PorterDuff
 import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool
-import com.bumptech.glide.load.resource.bitmap.BitmapTransformation
 import com.mitteloupe.photostyle.glide.extension.getBitmapWithSize
 import com.mitteloupe.photostyle.glide.extension.getEqualBitmap
+import com.mitteloupe.photostyle.glide.transformation.layered.BitmapLayerPool
 import java.security.MessageDigest
 
 /**
@@ -15,9 +16,12 @@ import java.security.MessageDigest
  */
 class PixelationTransformation(
     private val horizontalPixels: Int = KEEP_ASPECT_RATIO,
-    private val verticalPixels: Int = KEEP_ASPECT_RATIO
-) : BitmapTransformation() {
-    private val id =
+    private val verticalPixels: Int = KEEP_ASPECT_RATIO,
+    private val blendMode: PorterDuff.Mode = PorterDuff.Mode.SRC,
+    layerIdentifier: Int = 0,
+    bitmapLayerPool: BitmapLayerPool?
+) : LayeredBitmapTransformation(layerIdentifier, bitmapLayerPool) {
+    override val id =
         "com.mitteloupe.photostyle.glide.transformation.PixelationTransformation:$horizontalPixels:$verticalPixels"
 
     private val scaleMatrix = Matrix()
@@ -49,7 +53,7 @@ class PixelationTransformation(
         val outputBitmap = pool.getEqualBitmap(toTransform)
         drawScaledBitmap(scaledDownBitmap, outputBitmap, null)
 
-        return outputBitmap
+        return storeOrBlendOutputBitmap(toTransform, outputBitmap, blendMode)
     }
 
     private fun drawScaledBitmap(sourceBitmap: Bitmap, targetBitmap: Bitmap, paint: Paint?) {

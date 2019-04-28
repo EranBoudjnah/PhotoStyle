@@ -6,6 +6,8 @@ import android.renderscript.RenderScript
 import androidx.appcompat.app.AppCompatActivity
 import com.bumptech.glide.load.resource.bitmap.CenterInside
 import com.mitteloupe.photostyle.glide.GlideApp
+import com.mitteloupe.photostyle.glide.transformation.BrightnessTransformation
+import com.mitteloupe.photostyle.glide.transformation.ContrastTransformation
 import com.mitteloupe.photostyle.glide.transformation.FixedPaletteTransformation
 import com.mitteloupe.photostyle.glide.transformation.InvertTransformation
 import com.mitteloupe.photostyle.glide.transformation.LayeredTransformation
@@ -40,15 +42,19 @@ class MainActivity : AppCompatActivity() {
 //                PixelationTransformation(64),
 //                PosterizeTransformation(this, 7),
 //                InvertTransformation(this),
-                OutlineTransformation(this, PorterDuff.Mode.SCREEN, 0, bitmapLayerPool),
 //                ResizeTransformation(160),
                 FixedPaletteTransformation(
-                    Palette.GameBoy,
-                    OrderedDitheringConverter(renderScript, Pattern.PATTERN_BAYER),
+                    Palette.SuperGameBoy,
+                    OrderedDitheringConverter(renderScript, Pattern.PATTERN_HALFTONE),
                     PorterDuff.Mode.SRC,
                     1,
                     bitmapLayerPool
                 ),
+                BrightnessTransformation(0.2f, PorterDuff.Mode.SRC, 4, bitmapLayerPool),
+                LayeredTransformation(bitmapLayerPool, 4),
+                ContrastTransformation(-.5f, PorterDuff.Mode.SRC, 5, bitmapLayerPool),
+                LayeredTransformation(bitmapLayerPool, 5),
+                OutlineTransformation(renderScript, PorterDuff.Mode.SCREEN, 0, bitmapLayerPool),
                 LayeredTransformation(bitmapLayerPool, 1),
                 InvertTransformation(renderScript, PorterDuff.Mode.SRC, 2, bitmapLayerPool),
                 LayeredTransformation(bitmapLayerPool, 2),

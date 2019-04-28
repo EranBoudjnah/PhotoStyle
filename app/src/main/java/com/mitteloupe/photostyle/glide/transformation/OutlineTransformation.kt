@@ -1,6 +1,5 @@
 package com.mitteloupe.photostyle.glide.transformation
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.PorterDuff
 import android.renderscript.Allocation
@@ -15,14 +14,12 @@ import com.mitteloupe.photostyle.renderscript.ScriptC_outline
  */
 @Suppress("EqualsOrHashCode")
 class OutlineTransformation(
-    private val context: Context,
+    private val renderScript: RenderScript,
     private val blendMode: PorterDuff.Mode = PorterDuff.Mode.SRC,
     layerIdentifier: Int = 0,
     bitmapLayerPool: BitmapLayerPool?
 ) : LayeredBitmapTransformation(layerIdentifier, bitmapLayerPool) {
     override val id = "com.mitteloupe.photostyle.glide.transformation.OutlineTransformation"
-
-    private val renderScript by lazy { RenderScript.create(context) }
 
     override fun transform(pool: BitmapPool, toTransform: Bitmap, outWidth: Int, outHeight: Int): Bitmap =
         storeOrBlendOutputBitmap(toTransform, getOutlineBitmap(toTransform, pool), blendMode)
