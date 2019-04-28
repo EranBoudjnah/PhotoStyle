@@ -1,5 +1,5 @@
 rs_allocation palette;
-float4 paletteFloats[256];
+float4 paletteFloats[4096];
 uint paletteSize;
 
 void preparePalette() {
