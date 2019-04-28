@@ -1,25 +1,29 @@
 package com.mitteloupe.photostyle.glide.transformation
 
 import android.graphics.Bitmap
+import android.graphics.PorterDuff
 import android.util.Log
 import com.bumptech.glide.load.engine.bitmap_recycle.BitmapPool
-import com.bumptech.glide.load.resource.bitmap.BitmapTransformation
 import com.mitteloupe.photostyle.glide.extension.getEqualBitmap
+import com.mitteloupe.photostyle.glide.transformation.layered.BitmapLayerPool
 import com.mitteloupe.photostyle.graphics.BitmapVector3Converter
 import com.mitteloupe.photostyle.graphics.PaletteAndDither
 import com.mitteloupe.photostyle.graphics.dithering.RgbToPaletteConverter
 import com.mitteloupe.photostyle.math.Vector3
-import java.security.MessageDigest
 import kotlin.system.measureNanoTime
 
 /**
  * Created by Eran Boudjnah on 11/04/2019.
  */
+@Suppress("EqualsOrHashCode")
 class FixedPaletteTransformation(
     private val palette: Palette,
-    private val rgbToPaletteConverter: RgbToPaletteConverter
-) : BitmapTransformation() {
-    private val id = "com.mitteloupe.photostyle.glide.transformation.FixedPaletteTransformation:$palette"
+    private val rgbToPaletteConverter: RgbToPaletteConverter,
+    private val blendMode: PorterDuff.Mode = PorterDuff.Mode.SRC,
+    layerIdentifier: Int = 0,
+    bitmapLayerPool: BitmapLayerPool?
+) : LayeredBitmapTransformation(layerIdentifier, bitmapLayerPool) {
+    override val id = "com.mitteloupe.photostyle.glide.transformation.FixedPaletteTransformation:$palette"
 
     override fun transform(pool: BitmapPool, toTransform: Bitmap, outWidth: Int, outHeight: Int): Bitmap {
         val outputBitmap = pool.getEqualBitmap(toTransform)
@@ -32,17 +36,11 @@ class FixedPaletteTransformation(
         }
         Log.d("Benchmark", "Process image took ${benchmark / 1_000_000_000.0} seconds")
 
-        return outputBitmap
+        return storeOrBlendOutputBitmap(toTransform, outputBitmap, blendMode)
     }
 
     override fun equals(other: Any?) = other is FixedPaletteTransformation &&
             palette == other.palette
-
-    override fun hashCode() = id.hashCode()
-
-    override fun updateDiskCacheKey(messageDigest: MessageDigest) {
-        messageDigest.update(id.toByteArray(CHARSET))
-    }
 }
 
 sealed class Palette(val colors: Array<Vector3<Int>>) {
